@@ -15,6 +15,7 @@
         .btn-green { background-color: #28a745; color: white; }
         .entry { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 8px; background: #fff; }
         pre { white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 4px; font-size: 0.9em; }
+        .msg { color: #28a745; margin-left: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -28,17 +29,25 @@
             const [level, setLevel] = useState('B1');
             const [feedback, setFeedback] = useState('');
             const [history, setHistory] = useState([]);
+            const [copied, setCopied] = useState(false); // コピー完了メッセージ用の状態
 
             useEffect(() => {
                 const saved = localStorage.getItem('polyglot_diary_v1');
                 if (saved) setHistory(JSON.parse(saved));
             }, []);
 
-            const handleCopy = async () => {
+            const handleCopy = () => {
                 const prompt = `@PolyglotDiary\n以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
-                await navigator.clipboard.writeText(prompt);
-                window.open("https://gemini.google.com/", "_blank");
-                alert("プロンプトをコピーしました！Geminiに貼り付けてください。");
+                
+                // 1. 同期的にコピー
+                navigator.clipboard.writeText(prompt);
+                
+                // 2. 画面にメッセージを表示（3秒で消える）
+                setCopied(true);
+                setTimeout(() => setCopied(false), 3000);
+
+                // 3. アラートなどの「待ち時間」を作らずに、一瞬で開く（空白ページ対策）
+                window.open("https://gemini.google.com/app", "_blank");
             };
 
             const handleSave = () => {
@@ -69,7 +78,11 @@
                         <option value="B2">B2 (Avanzado)</option>
                     </select>
                     <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
-                    <button className="btn-blue" onClick={handleCopy}>Geminiを開いて添削</button>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button className="btn-blue" onClick={handleCopy}>Geminiを開いて添削</button>
+                        {copied && <span className="msg">✓ コピーしました！</span>}
+                    </div>
 
                     <h3 style={{marginTop: '30px'}}>2. Guardar feedback</h3>
                     <textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Geminiの回答をペースト..." />
