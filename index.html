@@ -8,14 +8,21 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 20px; line-height: 1.6; color: #333; }
-        textarea { width: 100%; height: 120px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 10px 20px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; line-height: 1.6; color: #333; background-color: #f9f9f9; }
+        .container { padding: 20px; }
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; resize: vertical; }
+        button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; }
         .btn-blue { background-color: #007bff; color: white; }
+        .btn-outline { background-color: white; color: #333; border: 1px solid #ccc; }
         .btn-green { background-color: #28a745; color: white; }
-        .entry { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 8px; background: #fff; }
-        pre { white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 4px; font-size: 0.9em; }
-        .msg { color: #28a745; margin-left: 10px; font-weight: bold; font-size: 0.9em; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background-color: white; border-bottom: 1px solid #eee; }
+        .back-btn { background: none; border: none; color: #007bff; font-size: 16px; cursor: pointer; padding: 0; width: auto; font-weight: normal; }
+        .history-card { background: white; border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .history-date { font-weight: bold; font-size: 18px; }
+        .history-snippet { color: #666; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .badge-done { background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-pending { background: #fff3e0; color: #e65100; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        pre { white-space: pre-wrap; background: #f4f4f4; padding: 15px; border-radius: 8px; font-size: 14px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -25,91 +32,156 @@
         const { useState, useEffect } = React;
 
         function App() {
+            // 画面の状態管理 ('home', 'history', 'detail')
+            const [view, setView] = useState('home');
+            
+            // データ管理
             const [text, setText] = useState('');
             const [level, setLevel] = useState('B1');
-            const [feedback, setFeedback] = useState('');
             const [history, setHistory] = useState([]);
-            const [copied, setCopied] = useState(false);
+            
+            // 詳細画面用の状態管理
+            const [activeEntry, setActiveEntry] = useState(null);
+            const [feedbackInput, setFeedbackInput] = useState('');
 
             useEffect(() => {
-                const saved = localStorage.getItem('polyglot_diary_v1');
+                const saved = localStorage.getItem('polyglot_diary_v2');
                 if (saved) setHistory(JSON.parse(saved));
             }, []);
 
-            const handleCopy = () => {
+            // === 1. Home画面の処理（書いてGeminiへ） ===
+            const handleWriteAndGo = () => {
+                if (!text) return alert("日記を書いてください！");
+
+                // プロンプトコピー（@マークなし）
                 const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
-                
-                // 1. クリップボードにコピー
                 navigator.clipboard.writeText(prompt);
-                
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
 
-                // 2. Geminiアプリを呼び出す（googlegemini://）
-                // これが失敗する場合に備えて、フォールバック（Web版）も用意
-                const appUrl = "googlegemini://"; 
-                const webUrl = "https://gemini.google.com/app";
-
-                // アプリを開こうとしてみる
-                window.location.href = appUrl;
-
-                // もしアプリがインストールされていなければ、1秒後にWeb版を開く
-                setTimeout(() => {
-                    if (document.hasFocus()) {
-                        window.open(webUrl, "_blank");
-                    }
-                }, 1000);
-            };
-
-            const handleSave = () => {
-                if (!text || !feedback) return alert("日記とフィードバックを入力してください");
+                // 原文だけを先に履歴に保存（feedbackは空）
                 const newEntry = {
                     id: Date.now(),
-                    date: new Date().toLocaleString(),
+                    date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
                     original: text,
-                    ai: feedback,
+                    ai: '', // まだフィードバックはない
                     level: level
                 };
                 const newHistory = [newEntry, ...history];
                 setHistory(newHistory);
-                localStorage.setItem('polyglot_diary_v1', JSON.stringify(newHistory));
+                localStorage.setItem('polyglot_diary_v2', JSON.stringify(newHistory));
+
+                // 入力欄をクリア
                 setText('');
-                setFeedback('');
-                alert("保存しました！");
+
+                // Geminiアプリを開く
+                const appUrl = "googlegemini://"; 
+                const webUrl = "https://gemini.google.com/app";
+                window.location.href = appUrl;
+                setTimeout(() => {
+                    if (document.hasFocus()) window.open(webUrl, "_blank");
+                }, 1000);
             };
 
-            return (
-                <div>
-                    <h1>📓 PolyglotDiary</h1>
-                    
-                    <h3>1. Escribe tu diario</h3>
-                    <select value={level} onChange={(e) => setLevel(e.target.value)} style={{marginBottom: '10px'}}>
-                        <option value="A2">A2 (Principiante)</option>
-                        <option value="B1">B1 (Intermedio)</option>
-                        <option value="B2">B2 (Avanzado)</option>
-                    </select>
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
-                    
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <button className="btn-blue" onClick={handleCopy}>Geminiアプリで添削</button>
-                        {copied && <span className="msg">✓ Copied!</span>}
-                    </div>
+            // === 2. 履歴画面から詳細を開く処理 ===
+            const openDetail = (entry) => {
+                setActiveEntry(entry);
+                setFeedbackInput(entry.ai || ''); // 既にフィードバックがあればセット
+                setView('detail');
+            };
 
-                    <h3 style={{marginTop: '30px'}}>2. Guardar feedback</h3>
-                    <textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Geminiの回答をペースト..." />
-                    <button className="btn-green" onClick={handleSave}>履歴に保存</button>
+            // === 3. 詳細画面でフィードバックを保存する処理 ===
+            const saveFeedback = () => {
+                const updatedHistory = history.map(item => 
+                    item.id === activeEntry.id ? { ...item, ai: feedbackInput } : item
+                );
+                setHistory(updatedHistory);
+                localStorage.setItem('polyglot_diary_v2', JSON.stringify(updatedHistory));
+                alert("フィードバックを保存しました！");
+                setView('history'); // 履歴一覧に戻る
+            };
 
-                    <h3 style={{marginTop: '40px'}}>🕒 Historial</h3>
-                    {history.map(item => (
-                        <div key={item.id} className="entry">
-                            <small>{item.date} [{item.level}]</small>
-                            <p><strong>Original:</strong> {item.original}</p>
-                            <strong>Feedback:</strong>
-                            <pre>{item.ai}</pre>
+            // ＝＝＝ 画面描画 ＝＝＝
+            
+            // 【画面1: ホーム】
+            if (view === 'home') {
+                return (
+                    <div className="container">
+                        <h2>📓 新しい日記</h2>
+                        <select value={level} onChange={(e) => setLevel(e.target.value)} style={{marginBottom: '10px', padding: '5px'}}>
+                            <option value="A2">A2 (Principiante)</option>
+                            <option value="B1">B1 (Intermedio)</option>
+                            <option value="B2">B2 (Avanzado)</option>
+                        </select>
+                        <textarea 
+                            value={text} 
+                            onChange={(e) => setText(e.target.value)} 
+                            placeholder="Escribe tu diario aquí..." 
+                        />
+                        <button className="btn-blue" onClick={handleWriteAndGo}>Geminiを開いて添削</button>
+                        
+                        <div style={{marginTop: '40px'}}>
+                            <button className="btn-outline" onClick={() => setView('history')}>History ➔</button>
                         </div>
-                    ))}
-                </div>
-            );
+                    </div>
+                );
+            }
+
+            // 【画面2: 履歴一覧】
+            if (view === 'history') {
+                return (
+                    <div>
+                        <div className="header">
+                            <button className="back-btn" onClick={() => setView('home')}>＜ 戻る</button>
+                            <h3 style={{margin: 0}}>History</h3>
+                            <div style={{width: '50px'}}></div> {/* レイアウト調整用 */}
+                        </div>
+                        <div className="container">
+                            {history.length === 0 ? <p>まだ履歴がありません。</p> : null}
+                            {history.map(item => (
+                                <div key={item.id} className="history-card" onClick={() => openDetail(item)}>
+                                    <div>
+                                        <div className="history-date">{item.date}</div>
+                                        <div className="history-snippet">{item.original}</div>
+                                    </div>
+                                    <div>
+                                        {item.ai ? 
+                                            <span className="badge-done">添削済</span> : 
+                                            <span className="badge-pending">未添削</span>
+                                        }
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            // 【画面3: 詳細＆フィードバック入力】
+            if (view === 'detail' && activeEntry) {
+                return (
+                    <div>
+                        <div className="header">
+                            <button className="back-btn" onClick={() => setView('history')}>＜ 戻る</button>
+                            <h3 style={{margin: 0}}>{activeEntry.date.split(' ')[0]}</h3>
+                            <div style={{width: '50px'}}></div>
+                        </div>
+                        <div className="container">
+                            <p style={{background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee'}}>
+                                <strong>Tu diario:</strong><br/>
+                                {activeEntry.original}
+                            </p>
+                            
+                            <h4 style={{marginTop: '20px'}}>Geminiのフィードバック</h4>
+                            <textarea 
+                                value={feedbackInput} 
+                                onChange={(e) => setFeedbackInput(e.target.value)} 
+                                placeholder="ここにGeminiの結果をペーストしてください..."
+                                style={{ height: '250px' }}
+                            />
+                            <button className="btn-green" onClick={saveFeedback}>保存して完了</button>
+                        </div>
+                    </div>
+                );
+            }
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
