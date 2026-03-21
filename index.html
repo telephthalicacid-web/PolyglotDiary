@@ -44,8 +44,6 @@
         .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
         
         .highlight-inline { font-weight: bold; color: #0d47a1; background-color: #e3f2fd; padding: 2px 4px; border-radius: 4px; margin: 0 2px; }
-        
-        /* 🆕 最初の見出しの余白を消去、2番目以降に余白を持たせる */
         .highlight-header { display: inline-block; font-weight: bold; color: #1565c0; font-size: 1.1em; margin-bottom: 5px; border-bottom: 2px solid #e3f2fd; }
         .highlight-header:not(:first-child) { margin-top: 20px; }
         .highlight-header:first-child { margin-top: 0; }
@@ -102,17 +100,19 @@
                 return days;
             };
 
+            // ✅ 過去のデータに時刻が含まれていても「日付部分のみ」で判定するよう修正
             const hasEntryOnDate = (date) => {
                 if (!date) return false;
                 const dateStr = date.toLocaleDateString('ja-JP');
-                return history.some(item => item.date === dateStr);
+                return history.some(item => item.date.split(' ')[0] === dateStr);
             };
 
+            // ✅ クリック時の検索も「日付部分のみ」で一致させるよう修正
             const handleDateClick = (date) => {
                 if (!date) return;
                 setSelectedDate(date);
                 const dateStr = date.toLocaleDateString('ja-JP');
-                const existing = history.find(item => item.date === dateStr);
+                const existing = history.find(item => item.date.split(' ')[0] === dateStr);
                 if (existing) {
                     setPrevView('home');
                     openDetail(existing);
@@ -128,7 +128,7 @@
                 navigator.clipboard.writeText(prompt);
                 const newEntry = {
                     id: Date.now(),
-                    date: selectedDate.toLocaleDateString('ja-JP'), // 🆕 日付のみ
+                    date: selectedDate.toLocaleDateString('ja-JP'),
                     original: text,
                     ai: '',
                     level: level
@@ -232,7 +232,8 @@
                                 <h4 style={{marginTop:'30px'}}>最近の記録</h4>
                                 {history.slice(0, 3).map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
-                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
+                                        {/* ✅ 過去データの表示時も時刻をカット */}
+                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                         <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                     </div>
                                 ))}
@@ -244,7 +245,8 @@
                                 <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
                                 {history.map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('history'); openDetail(item); }}>
-                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
+                                        {/* ✅ 過去データの表示時も時刻をカット */}
+                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                         <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                     </div>
                                 ))}
@@ -254,7 +256,8 @@
                         {view === 'detail' && activeEntry && (
                             <div>
                                 <div style={{background:'white', padding:'15px', borderRadius:'12px', border:'1px solid #eee'}}>
-                                    <strong>Original ({activeEntry.date}):</strong>
+                                    {/* ✅ 過去データの表示時も時刻をカット */}
+                                    <strong>Original ({activeEntry.date.split(' ')[0]}):</strong>
                                     <p style={{whiteSpace:'pre-wrap', margin:'10px 0 0'}}>{activeEntry.original}</p>
                                 </div>
                                 <h4 style={{marginTop:'20px'}}>Feedback</h4>
