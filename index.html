@@ -100,14 +100,12 @@
                 return days;
             };
 
-            // ✅ 過去のデータに時刻が含まれていても「日付部分のみ」で判定するよう修正
             const hasEntryOnDate = (date) => {
                 if (!date) return false;
                 const dateStr = date.toLocaleDateString('ja-JP');
                 return history.some(item => item.date.split(' ')[0] === dateStr);
             };
 
-            // ✅ クリック時の検索も「日付部分のみ」で一致させるよう修正
             const handleDateClick = (date) => {
                 if (!date) return;
                 setSelectedDate(date);
@@ -162,6 +160,15 @@
                 const selectedText = feedbackInput.substring(start, end);
                 const newText = feedbackInput.substring(0, start) + `**${selectedText}**` + feedbackInput.substring(end);
                 setFeedbackInput(newText);
+            };
+
+            // ✅ 日付の新しい順にソートする関数
+            const getSortedHistory = () => {
+                return [...history].sort((a, b) => {
+                    const dateA = new Date(a.date.replace(/\//g, '-'));
+                    const dateB = new Date(b.date.replace(/\//g, '-'));
+                    return dateB - dateA;
+                });
             };
 
             const renderFormattedText = (text) => {
@@ -230,9 +237,8 @@
                                 <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
                                 
                                 <h4 style={{marginTop:'30px'}}>最近の記録</h4>
-                                {history.slice(0, 3).map(item => (
+                                {getSortedHistory().slice(0, 5).map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
-                                        {/* ✅ 過去データの表示時も時刻をカット */}
                                         <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                         <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                     </div>
@@ -243,9 +249,8 @@
                         {view === 'history' && (
                             <div>
                                 <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
-                                {history.map(item => (
+                                {getSortedHistory().map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('history'); openDetail(item); }}>
-                                        {/* ✅ 過去データの表示時も時刻をカット */}
                                         <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                         <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                     </div>
@@ -256,7 +261,6 @@
                         {view === 'detail' && activeEntry && (
                             <div>
                                 <div style={{background:'white', padding:'15px', borderRadius:'12px', border:'1px solid #eee'}}>
-                                    {/* ✅ 過去データの表示時も時刻をカット */}
                                     <strong>Original ({activeEntry.date.split(' ')[0]}):</strong>
                                     <p style={{whiteSpace:'pre-wrap', margin:'10px 0 0'}}>{activeEntry.original}</p>
                                 </div>
