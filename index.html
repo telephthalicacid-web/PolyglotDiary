@@ -21,7 +21,6 @@
             padding: 0; 
             line-height: 1.6; 
             color: #333; 
-            /* 背景色を指定のカラーに変更 */
             background-color: #ADADAD; 
             padding-bottom: 120px; 
         }
@@ -32,25 +31,27 @@
         .calendar-title { font-weight: bold; font-size: 18px; }
         .calendar-nav-btn { background: #eee; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #555; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; }
+        .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; border: 2px solid transparent; }
         .day-label { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
         
+        /* 記録がある日の背景（薄い青） */
         .has-entry { background-color: #e3f2fd; color: #1976d2; font-weight: bold; }
-        /* 今日の枠線に指定のブルーを使用 */
-        .is-today { border: 2px solid #85B6FE; }
-        .is-selected { background-color: #333; color: white; font-weight: bold; border: none; }
+        
+        /* ✅ 今日の日付を枠線（ブルー）のみに変更 */
+        .is-today { border: 2px solid #85B6FE !important; }
+        
+        /* 選択されている日の背景（濃いグレー） */
+        .is-selected { background-color: #333 !important; color: white !important; font-weight: bold; border: 2px solid #333 !important; }
         
         textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ccc; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; background: white; }
         
         button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; }
         button:active { opacity: 0.8; }
 
-        /* メインボタンを指定のカラーに変更 */
         .btn-blue { background-color: #85B6FE; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .btn-green { background-color: #28a745; color: white; }
         
         .btn-outline { background-color: rgba(255, 255, 255, 0.8); color: #333; border: 1px solid #999; }
-        /* レベルボタンの文字色と枠線に指定のブルーを使用 */
         .btn-level { background-color: white; color: #85B6FE; border: 2px solid #85B6FE; border-radius: 8px; padding: 8px 16px; font-size: 14px; width: auto; margin: 0; }
         
         .bottom-action-area { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; padding: 0 20px; z-index: 1000; pointer-events: none; }
