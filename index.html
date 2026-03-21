@@ -1,233 +1,281 @@
-<script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyglotDiary</title>
+    
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PolyglotDiary">
 
-    function App() {
-        const [view, setView] = useState('home');
-        const [prevView, setPrevView] = useState('home');
-        const [history, setHistory] = useState([]);
-        const [selectedDate, setSelectedDate] = useState(new Date());
-        const [viewMonth, setViewMonth] = useState(new Date());
-        const [text, setText] = useState('');
-        const [level, setLevel] = useState('B1');
-        const [activeEntry, setActiveEntry] = useState(null);
-        const [feedbackInput, setFeedbackInput] = useState('');
-        const [isEditing, setIsEditing] = useState(false);
-        
-        const textareaRef = useRef(null);
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; line-height: 1.6; color: #333; background-color: #f4f7f6; padding-bottom: 120px; }
+        .container { padding: 15px; }
+        .calendar-container { background: white; padding: 15px; border-radius: 12px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .calendar-title { font-weight: bold; font-size: 18px; }
+        .calendar-nav-btn { background: #eee; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #555; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; }
+        .day-label { font-size: 11px; color: #999; font-weight: bold; margin-bottom: 5px; }
+        .has-entry { background-color: #e3f2fd; color: #1976d2; font-weight: bold; }
+        .is-today { border: 2px solid #007bff; }
+        .is-selected { background-color: #4a4a4a; color: white; font-weight: bold; border: none; }
+        textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; }
+        .btn-blue { background-color: #007bff; color: white; }
+        .btn-green { background-color: #28a745; color: white; }
+        .btn-outline { background-color: white; color: #333; border: 1px solid #ddd; }
+        .btn-level { background-color: #f0f7ff; color: #007bff; border: 2px solid #007bff; border-radius: 8px; padding: 8px 16px; font-size: 14px; width: auto; margin: 0; }
+        .bottom-action-area { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; padding: 0 20px; z-index: 1000; pointer-events: none; }
+        .big-back-btn { background: #4a4a4a; color: white; width: 100%; max-width: 500px; padding: 16px; border-radius: 16px; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; }
+        .history-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
+        .highlight-inline { font-weight: bold; color: #0d47a1; background-color: #e3f2fd; padding: 2px 4px; border-radius: 4px; margin: 0 2px; }
+        .highlight-header { display: inline-block; font-weight: bold; color: #1565c0; font-size: 1.1em; margin-bottom: 5px; border-bottom: 2px solid #e3f2fd; }
+        .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-done { background: #e8f5e9; color: #2e7d32; }
+        .badge-pending { background: #fff3e0; color: #e65100; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 5px; }
+        .btn-tool { width: auto; padding: 6px 12px; font-size: 14px; background: #eee; color: #333; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-        useEffect(() => {
-            const saved = localStorage.getItem('polyglot_diary_v3');
-            if (saved) setHistory(JSON.parse(saved));
-        }, []);
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        const toggleLevel = () => {
-            const levels = ['A2', 'B1', 'B2'];
-            setLevel(levels[(levels.indexOf(level) + 1) % levels.length]);
-        };
+        function App() {
+            const [view, setView] = useState('home');
+            const [prevView, setPrevView] = useState('home');
+            const [history, setHistory] = useState([]);
+            const [selectedDate, setSelectedDate] = useState(new Date());
+            const [viewMonth, setViewMonth] = useState(new Date());
+            const [text, setText] = useState('');
+            const [level, setLevel] = useState('B1');
+            const [activeEntry, setActiveEntry] = useState(null);
+            const [feedbackInput, setFeedbackInput] = useState('');
+            const [isEditing, setIsEditing] = useState(false);
+            
+            const textareaRef = useRef(null);
 
-        const changeMonth = (offset) => {
-            setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + offset, 1));
-        };
+            useEffect(() => {
+                const saved = localStorage.getItem('polyglot_diary_v3');
+                if (saved) setHistory(JSON.parse(saved));
+            }, []);
 
-        const getDaysInMonth = () => {
-            const year = viewMonth.getFullYear();
-            const month = viewMonth.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const days = [];
-            for (let i = 0; i < firstDay; i++) days.push(null);
-            for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
-            return days;
-        };
-
-        const hasEntryOnDate = (date) => {
-            if (!date) return false;
-            const dateStr = date.toLocaleDateString('ja-JP');
-            return history.some(item => item.date.split(' ')[0] === dateStr);
-        };
-
-        const handleDateClick = (date) => {
-            if (!date) return;
-            setSelectedDate(date);
-            const dateStr = date.toLocaleDateString('ja-JP');
-            const existing = history.find(item => item.date.split(' ')[0] === dateStr);
-            if (existing) {
-                setPrevView('home');
-                openDetail(existing);
-            } else {
-                setView('home');
-                setText('');
-            }
-        };
-
-        const handleWriteAndGo = () => {
-            if (!text) return alert("日記を書いてください");
-            const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
-            navigator.clipboard.writeText(prompt);
-            const newEntry = {
-                id: Date.now(),
-                date: selectedDate.toLocaleDateString('ja-JP'),
-                original: text,
-                ai: '',
-                level: level
+            const toggleLevel = () => {
+                const levels = ['A2', 'B1', 'B2'];
+                setLevel(levels[(levels.indexOf(level) + 1) % levels.length]);
             };
-            const newHistory = [newEntry, ...history];
-            setHistory(newHistory);
-            localStorage.setItem('polyglot_diary_v3', JSON.stringify(newHistory));
-            setText('');
-            window.location.href = "googlegemini://";
-        };
 
-        const openDetail = (entry) => {
-            setActiveEntry(entry);
-            setFeedbackInput(entry.ai || '');
-            setIsEditing(!entry.ai);
-            setView('detail');
-        };
+            const changeMonth = (offset) => {
+                setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + offset, 1));
+            };
 
-        const saveFeedback = () => {
-            const updated = history.map(item => item.id === activeEntry.id ? { ...item, ai: feedbackInput } : item);
-            setHistory(updated);
-            localStorage.setItem('polyglot_diary_v3', JSON.stringify(updated));
-            setActiveEntry({ ...activeEntry, ai: feedbackInput });
-            setIsEditing(false);
-        };
+            const getDaysInMonth = () => {
+                const year = viewMonth.getFullYear();
+                const month = viewMonth.getMonth();
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const days = [];
+                for (let i = 0; i < firstDay; i++) days.push(null);
+                for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+                return days;
+            };
 
-        const applyBoldFormat = () => {
-            const textarea = textareaRef.current;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = feedbackInput.substring(start, end);
-            const newText = feedbackInput.substring(0, start) + `**${selectedText}**` + feedbackInput.substring(end);
-            setFeedbackInput(newText);
-        };
+            const hasEntryOnDate = (date) => {
+                if (!date) return false;
+                const dateStr = date.toLocaleDateString('ja-JP');
+                return history.some(item => item.date.split(' ')[0] === dateStr);
+            };
 
-        // ✅ 日付の新しい順にソートする関数 (IDベースで修正)
-        const getSortedHistory = () => {
-            return [...history].sort((a, b) => (b.id || 0) - (a.id || 0));
-        };
-
-        const renderFormattedText = (text) => {
-            if (!text) return "";
-            const lines = text.split('\n');
-            return lines.map((line, lineIndex) => {
-                const isHeaderCandidate = line.trim().startsWith('**') && line.trim().endsWith('**');
-                if (isHeaderCandidate) {
-                    const cleanText = line.trim().replace(/\*\*/g, '');
-                    return <div key={lineIndex} className="highlight-header">{cleanText}</div>;
+            const handleDateClick = (date) => {
+                if (!date) return;
+                setSelectedDate(date);
+                const dateStr = date.toLocaleDateString('ja-JP');
+                const existing = history.find(item => item.date.split(' ')[0] === dateStr);
+                if (existing) {
+                    setPrevView('home');
+                    openDetail(existing);
                 } else {
-                    const parts = line.split(/(\*\*.*?\*\*)/g);
-                    return (
-                        <div key={lineIndex}>
-                            {parts.map((part, partIndex) => {
-                                if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-                                    return <span key={partIndex} className="highlight-inline">{part.slice(2, -2)}</span>;
-                                }
-                                return <span key={partIndex}>{part}</span>;
-                            })}
-                        </div>
-                    );
+                    setView('home');
+                    setText('');
                 }
-            });
-        };
+            };
 
-        const Calendar = () => (
-            <div className="calendar-container">
-                <div className="calendar-header">
-                    <button className="calendar-nav-btn" onClick={() => changeMonth(-1)}>〈</button>
-                    <div className="calendar-title">{viewMonth.getFullYear()}年{viewMonth.getMonth() + 1}月</div>
-                    <button className="calendar-nav-btn" onClick={() => changeMonth(1)}>〉</button>
-                </div>
-                <div className="calendar-grid">
-                    {['日','月','火','水','木','金','土'].map(d => <div key={d} className="day-label">{d}</div>)}
-                    {getDaysInMonth().map((date, i) => (
-                        <div 
-                            key={i} 
-                            className={`calendar-day 
-                                ${date && hasEntryOnDate(date) ? 'has-entry' : ''} 
-                                ${date && date.toDateString() === selectedDate.toDateString() ? 'is-selected' : ''}
-                                ${date && date.toDateString() === new Date().toDateString() ? 'is-today' : ''}
-                            `}
-                            onClick={() => handleDateClick(date)}
-                        >
-                            {date ? date.getDate() : ''}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
+            const handleWriteAndGo = () => {
+                if (!text) return alert("日記を書いてください");
+                const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
+                navigator.clipboard.writeText(prompt);
+                const newEntry = {
+                    id: Date.now(),
+                    date: selectedDate.toLocaleDateString('ja-JP'),
+                    original: text,
+                    ai: '',
+                    level: level
+                };
+                // 保存時に新しいものを先頭に追加しつつ、表示時にIDでソートする
+                const newHistory = [newEntry, ...history];
+                setHistory(newHistory);
+                localStorage.setItem('polyglot_diary_v3', JSON.stringify(newHistory));
+                setText('');
+                window.location.href = "googlegemini://";
+            };
 
-        return (
-            <div>
-                <div className="container">
-                    {view === 'home' && <Calendar />}
+            const openDetail = (entry) => {
+                setActiveEntry(entry);
+                setFeedbackInput(entry.ai || '');
+                setIsEditing(!entry.ai);
+                setView('detail');
+            };
 
-                    {view === 'home' && (
-                        <div>
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '15px'}}>
-                                <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')}</h3>
-                                <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
+            const saveFeedback = () => {
+                const updated = history.map(item => item.id === activeEntry.id ? { ...item, ai: feedbackInput } : item);
+                setHistory(updated);
+                localStorage.setItem('polyglot_diary_v3', JSON.stringify(updated));
+                setActiveEntry({ ...activeEntry, ai: feedbackInput });
+                setIsEditing(false);
+            };
+
+            const applyBoldFormat = () => {
+                const textarea = textareaRef.current;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = feedbackInput.substring(start, end);
+                const newText = feedbackInput.substring(0, start) + `**${selectedText}**` + feedbackInput.substring(end);
+                setFeedbackInput(newText);
+            };
+
+            // ✅ ID（作成日時）の新しい順にソート
+            const getSortedHistory = () => {
+                return [...history].sort((a, b) => (b.id || 0) - (a.id || 0));
+            };
+
+            const renderFormattedText = (text) => {
+                if (!text) return "";
+                const lines = text.split('\n');
+                return lines.map((line, lineIndex) => {
+                    const isHeaderCandidate = line.trim().startsWith('**') && line.trim().endsWith('**');
+                    if (isHeaderCandidate) {
+                        const cleanText = line.trim().replace(/\*\*/g, '');
+                        return <div key={lineIndex} className="highlight-header">{cleanText}</div>;
+                    } else {
+                        const parts = line.split(/(\*\*.*?\*\*)/g);
+                        return (
+                            <div key={lineIndex}>
+                                {parts.map((part, partIndex) => {
+                                    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                                        return <span key={partIndex} className="highlight-inline">{part.slice(2, -2)}</span>;
+                                    }
+                                    return <span key={partIndex}>{part}</span>;
+                                })}
                             </div>
-                            <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
-                            <button className="btn-blue" onClick={handleWriteAndGo}>Geminiを開いて添削</button>
-                            <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
-                            
-                            <h4 style={{marginTop:'30px'}}>最近の記録</h4>
-                            {getSortedHistory().slice(0, 5).map(item => (
-                                <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
-                                    <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
-                                    <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                        );
+                    }
+                });
+            };
 
-                    {view === 'history' && (
-                        <div>
-                            <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
-                            {getSortedHistory().map(item => (
-                                <div key={item.id} className="history-card" onClick={() => { setPrevView('history'); openDetail(item); }}>
-                                    <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
-                                    <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {view === 'detail' && activeEntry && (
-                        <div>
-                            <div style={{background:'white', padding:'15px', borderRadius:'12px', border:'1px solid #eee'}}>
-                                <strong>Original ({activeEntry.date.split(' ')[0]}):</strong>
-                                <p style={{whiteSpace:'pre-wrap', margin:'10px 0 0'}}>{activeEntry.original}</p>
-                            </div>
-                            <h4 style={{marginTop:'20px'}}>Feedback</h4>
-                            {isEditing ? (
-                                <div>
-                                    <div className="toolbar"><button className="btn-tool" onClick={applyBoldFormat}><strong>B</strong> 太字</button></div>
-                                    <textarea ref={textareaRef} value={feedbackInput} onChange={(e) => setFeedbackInput(e.target.value)} style={{ height: '300px' }} />
-                                    <button className="btn-green" onClick={saveFeedback}>保存する</button>
-                                </div>
-                            ) : (
-                                <div>
-                                    <div className="feedback-display">{renderFormattedText(activeEntry.ai)}</div>
-                                    <button className="btn-outline" style={{marginTop:'10px'}} onClick={() => setIsEditing(true)}>編集する</button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {(view === 'history' || view === 'detail') && (
-                    <div className="bottom-action-area">
-                        <div className="big-back-btn" onClick={() => setView(view === 'history' ? 'home' : prevView)}>
-                            {view === 'history' ? '〈 カレンダーに戻る' : (prevView === 'history' ? '〈 履歴一覧に戻る' : '〈 カレンダーに戻る')}
-                        </div>
+            const Calendar = () => (
+                <div className="calendar-container">
+                    <div className="calendar-header">
+                        <button className="calendar-nav-btn" onClick={() => changeMonth(-1)}>〈</button>
+                        <div className="calendar-title">{viewMonth.getFullYear()}年{viewMonth.getMonth() + 1}月</div>
+                        <button className="calendar-nav-btn" onClick={() => changeMonth(1)}>〉</button>
                     </div>
-                )}
-            </div>
-        );
-    }
+                    <div className="calendar-grid">
+                        {['日','月','火','水','木','金','土'].map(d => <div key={d} className="day-label">{d}</div>)}
+                        {getDaysInMonth().map((date, i) => (
+                            <div 
+                                key={i} 
+                                className={`calendar-day 
+                                    ${date && hasEntryOnDate(date) ? 'has-entry' : ''} 
+                                    ${date && date.toDateString() === selectedDate.toDateString() ? 'is-selected' : ''}
+                                    ${date && date.toDateString() === new Date().toDateString() ? 'is-today' : ''}
+                                `}
+                                onClick={() => handleDateClick(date)}
+                            >
+                                {date ? date.getDate() : ''}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-</script>
+            return (
+                <div>
+                    <div className="container">
+                        {view === 'home' && <Calendar />}
+                        {view === 'home' && (
+                            <div>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '15px'}}>
+                                    <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')}</h3>
+                                    <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
+                                </div>
+                                <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
+                                <button className="btn-blue" onClick={handleWriteAndGo}>Geminiを開いて添削</button>
+                                <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
+                                <h4 style={{marginTop:'30px'}}>最近の記録（直近5つ）</h4>
+                                {getSortedHistory().slice(0, 5).map(item => (
+                                    <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
+                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
+                                        <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {view === 'history' && (
+                            <div>
+                                <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
+                                {getSortedHistory().map(item => (
+                                    <div key={item.id} className="history-card" onClick={() => { setPrevView('history'); openDetail(item); }}>
+                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
+                                        <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {view === 'detail' && activeEntry && (
+                            <div>
+                                <div style={{background:'white', padding:'15px', borderRadius:'12px', border:'1px solid #eee'}}>
+                                    <strong>Original ({activeEntry.date.split(' ')[0]}):</strong>
+                                    <p style={{whiteSpace:'pre-wrap', margin:'10px 0 0'}}>{activeEntry.original}</p>
+                                </div>
+                                <h4 style={{marginTop:'20px'}}>Feedback</h4>
+                                {isEditing ? (
+                                    <div>
+                                        <div className="toolbar"><button className="btn-tool" onClick={applyBoldFormat}><strong>B</strong> 太字</button></div>
+                                        <textarea ref={textareaRef} value={feedbackInput} onChange={(e) => setFeedbackInput(e.target.value)} style={{ height: '300px' }} />
+                                        <button className="btn-green" onClick={saveFeedback}>保存する</button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="feedback-display">{renderFormattedText(activeEntry.ai)}</div>
+                                        <button className="btn-outline" style={{marginTop:'10px'}} onClick={() => setIsEditing(true)}>編集する</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    {(view === 'history' || view === 'detail') && (
+                        <div className="bottom-action-area">
+                            <div className="big-back-btn" onClick={() => setView(view === 'history' ? 'home' : prevView)}>
+                                {view === 'history' ? '〈 カレンダーに戻る' : (prevView === 'history' ? '〈 履歴一覧に戻る' : '〈 カレンダーに戻る')}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
