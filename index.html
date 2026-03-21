@@ -37,7 +37,7 @@
             }, []);
 
             const handleCopy = () => {
-                const prompt = `@PolyglotDiary\n以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
+                const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
                 
                 // 1. クリップボードにコピー
                 navigator.clipboard.writeText(prompt);
