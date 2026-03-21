@@ -1,0 +1,20 @@
+<svg width="280" height="280" viewBox="200 100 280 280" xmlns="http://www.w3.org/2000/svg">
+  <rect x="200" y="100" width="280" height="280" rx="20" fill="#2D3E50"/>
+  
+  <text x="340" y="200" font-family="serif" font-size="96" font-weight="700" fill="#E74C3C" text-anchor="middle" letter-spacing="-2">Es</text>
+  
+  <text x="340" y="280" font-family="serif" font-size="32" font-weight="400" fill="#FFD93D" text-anchor="middle" letter-spacing="1">diario</text>
+  
+  <path d="M260 315 L420 315" stroke="#FFD93D" stroke-width="2" stroke-linecap="round"/>
+  
+  <circle cx="250" cy="355" r="3" fill="#FFD93D"/>
+  <circle cx="270" cy="355" r="3" fill="#E74C3C"/>
+  <circle cx="290" cy="355" r="3" fill="#FFD93D"/>
+  <circle cx="310" cy="355" r="3" fill="#E74C3C"/>
+  <circle cx="330" cy="355" r="3" fill="#FFD93D"/>
+  <circle cx="350" cy="355" r="3" fill="#E74C3C"/>
+  <circle cx="370" cy="355" r="3" fill="#FFD93D"/>
+  <circle cx="390" cy="355" r="3" fill="#E74C3C"/>
+  <circle cx="410" cy="355" r="3" fill="#FFD93D"/>
+  <circle cx="430" cy="355" r="3" fill="#E74C3C"/>
+</svg>
