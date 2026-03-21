@@ -14,18 +14,22 @@
         /* Calendar Styles */
         .calendar-container { background: white; padding: 15px; border-radius: 12px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; }
+        .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; }
         .day-label { font-size: 11px; color: #999; font-weight: bold; margin-bottom: 5px; }
         .has-entry { background-color: #e3f2fd; color: #1976d2; font-weight: bold; }
-        .is-selected { border: 2px solid #007bff; }
-        .is-today { text-decoration: underline; color: #ff5722; }
+        .is-today { border: 2px solid #007bff; } /* 当日は青枠のみ */
+        .is-selected { background-color: #4a4a4a; color: white; font-weight: bold; border: none; } /* 選択中は黒っぽく */
 
         textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
         button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; }
+        
         .btn-blue { background-color: #007bff; color: white; }
         .btn-green { background-color: #28a745; color: white; }
         .btn-outline { background-color: white; color: #333; border: 1px solid #ddd; }
         
+        /* レベル切り替え用の新しいボタンデザイン */
+        .btn-level { background-color: #f0f7ff; color: #007bff; border: 2px solid #007bff; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; width: auto; margin: 0; }
+
         /* Floating Back Button */
         .floating-back { position: fixed; right: 20px; bottom: 30px; width: 60px; height: 60px; border-radius: 30px; background: #333; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 24px; cursor: pointer; }
 
@@ -57,7 +61,13 @@
                 if (saved) setHistory(JSON.parse(saved));
             }, []);
 
-            // カレンダー生成用
+            // レベルをタップで切り替える関数
+            const toggleLevel = () => {
+                const levels = ['A2', 'B1', 'B2'];
+                const nextIndex = (levels.indexOf(level) + 1) % levels.length;
+                setLevel(levels[nextIndex]);
+            };
+
             const getDaysInMonth = () => {
                 const year = selectedDate.getFullYear();
                 const month = selectedDate.getMonth();
@@ -126,8 +136,8 @@
 
             const Calendar = () => (
                 <div className="calendar-container">
-                    <div style={{textAlign:'center', fontWeight:'bold', marginBottom:'10px'}}>
-                        {selectedDate.getFullYear()}/{selectedDate.getMonth() + 1}
+                    <div style={{textAlign:'center', fontWeight:'bold', marginBottom:'10px', fontSize: '18px'}}>
+                        {selectedDate.getFullYear()}年{selectedDate.getMonth() + 1}月
                     </div>
                     <div className="calendar-grid">
                         {['日','月','火','水','木','金','土'].map(d => <div key={d} className="day-label">{d}</div>)}
@@ -150,15 +160,14 @@
 
             return (
                 <div>
-                    <Calendar />
+                    {/* カレンダーはホーム画面のみ表示 */}
+                    {view === 'home' && <Calendar />}
 
                     {view === 'home' && (
                         <div className="container">
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                <h3>{selectedDate.toLocaleDateString('ja-JP')} の日記</h3>
-                                <select value={level} onChange={(e) => setLevel(e.target.value)} style={{padding:'5px'}}>
-                                    <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
-                                </select>
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '15px'}}>
+                                <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')} の日記</h3>
+                                <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
                             </div>
                             <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
                             <button className="btn-blue" onClick={handleWriteAndGo}>Geminiを開いて添削</button>
@@ -176,10 +185,11 @@
 
                     {view === 'history' && (
                         <div className="container">
-                            <h3>Historial</h3>
+                            <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
+                            {history.length === 0 && <p style={{color: '#666'}}>まだ履歴がありません。</p>}
                             {history.map(item => (
                                 <div key={item.id} className="history-card" onClick={() => openDetail(item)}>
-                                    <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date}</div><div style={{fontSize:'12px', color:'#666'}}>{item.original}</div></div>
+                                    <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                     <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                 </div>
                             ))}
@@ -196,7 +206,7 @@
                             <h4 style={{marginTop:'20px'}}>Feedback</h4>
                             {isEditing ? (
                                 <div>
-                                    <textarea value={feedbackInput} onChange={(e) => setFeedbackInput(e.target.value)} placeholder="Paste feedback here..." />
+                                    <textarea value={feedbackInput} onChange={(e) => setFeedbackInput(e.target.value)} placeholder="Geminiの結果をここにペースト..." />
                                     <button className="btn-green" onClick={saveFeedback}>保存する</button>
                                 </div>
                             ) : (
