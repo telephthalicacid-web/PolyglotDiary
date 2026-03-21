@@ -38,15 +38,26 @@
         .history-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
         
-        /* === 🎨 ここを赤から青に変更しました === */
-        .highlight-bold { 
+        /* === 🎨 ハイライトの調整：背景あり（単語用） === */
+        .highlight-inline { 
             font-weight: bold; 
-            color: #1976d2; /* 濃い青色に変更 */
-            background-color: #e3f2fd; /* 薄い青色の背景に変更 */
-            padding: 0 4px; 
+            color: #0d47a1; 
+            background-color: #e3f2fd; 
+            padding: 2px 4px; 
             border-radius: 4px; 
+            margin: 0 2px;
         }
-        /* ======================================= */
+
+        /* === 🎨 項目名用：背景なし（タイトル用） === */
+        .highlight-header {
+            display: inline-block;
+            font-weight: bold;
+            color: #1565c0;
+            font-size: 1.1em;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            border-bottom: 2px solid #e3f2fd; /* 下線だけ引いてスッキリさせる */
+        }
 
         .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
         .badge-done { background: #e8f5e9; color: #2e7d32; }
@@ -169,14 +180,32 @@
                 setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
             };
 
+            // 改良版：行単位か単語単位かでスタイルを分ける
             const renderFormattedText = (text) => {
                 if (!text) return "";
-                const parts = text.split(/(\*\*.*?\*\*)/g);
-                return parts.map((part, index) => {
-                    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-                        return <span key={index} className="highlight-bold">{part.slice(2, -2)}</span>;
+                const lines = text.split('\n');
+                
+                return lines.map((line, lineIndex) => {
+                    const isHeaderCandidate = line.trim().startsWith('**') && line.trim().endsWith('**');
+                    
+                    if (isHeaderCandidate) {
+                        // 行全体が太字（項目名など）の場合は背景なしスタイル
+                        const cleanText = line.trim().replace(/\*\*/g, '');
+                        return <div key={lineIndex} className="highlight-header">{cleanText}</div>;
+                    } else {
+                        // 行の一部が太字の場合は背景ありスタイル
+                        const parts = line.split(/(\*\*.*?\*\*)/g);
+                        return (
+                            <div key={lineIndex}>
+                                {parts.map((part, partIndex) => {
+                                    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                                        return <span key={partIndex} className="highlight-inline">{part.slice(2, -2)}</span>;
+                                    }
+                                    return <span key={partIndex}>{part}</span>;
+                                })}
+                            </div>
+                        );
                     }
-                    return <span key={index}>{part}</span>;
                 });
             };
 
