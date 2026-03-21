@@ -18,6 +18,11 @@
         .container { padding: 15px; }
         
         .calendar-container { background: white; padding: 15px; border-radius: 12px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .calendar-title { font-weight: bold; font-size: 18px; }
+        .calendar-nav-btn { background: #eee; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #555; }
+        .calendar-nav-btn:active { background: #ddd; }
+        
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; }
         .day-label { font-size: 11px; color: #999; font-weight: bold; margin-bottom: 5px; }
@@ -33,39 +38,9 @@
         .btn-outline { background-color: white; color: #333; border: 1px solid #ddd; }
         .btn-level { background-color: #f0f7ff; color: #007bff; border: 2px solid #007bff; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; width: auto; margin: 0; }
 
-        /* 🆕 改良：浮かぶ大きな戻るボタン */
-        .bottom-action-area { 
-            position: fixed; 
-            bottom: 30px; /* 下から少し浮かせる */
-            left: 0; 
-            right: 0; 
-            display: flex;
-            justify-content: center;
-            padding: 0 20px;
-            z-index: 1000;
-            pointer-events: none; /* エリア自体はクリックを邪魔しない */
-        }
-        .big-back-btn { 
-            background: #4a4a4a; /* 落ち着いた黒系 */
-            color: white;
-            width: 100%;
-            max-width: 500px;
-            padding: 16px;
-            border-radius: 16px; /* 大きな丸み */
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            pointer-events: auto; /* ボタンはクリック可能に */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .big-back-btn:active {
-            opacity: 0.8;
-            transform: scale(0.98);
-        }
+        .bottom-action-area { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; padding: 0 20px; z-index: 1000; pointer-events: none; }
+        .big-back-btn { background: #4a4a4a; color: white; width: 100%; max-width: 500px; padding: 16px; border-radius: 16px; text-align: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; }
+        .big-back-btn:active { opacity: 0.8; transform: scale(0.98); }
 
         .history-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
@@ -89,6 +64,7 @@
             const [prevView, setPrevView] = useState('home');
             const [history, setHistory] = useState([]);
             const [selectedDate, setSelectedDate] = useState(new Date());
+            const [viewMonth, setViewMonth] = useState(new Date()); // 🆕 表示中の月を管理
             const [text, setText] = useState('');
             const [level, setLevel] = useState('B1');
             const [activeEntry, setActiveEntry] = useState(null);
@@ -107,9 +83,13 @@
                 setLevel(levels[(levels.indexOf(level) + 1) % levels.length]);
             };
 
+            const changeMonth = (offset) => {
+                setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + offset, 1));
+            };
+
             const getDaysInMonth = () => {
-                const year = selectedDate.getFullYear();
-                const month = selectedDate.getMonth();
+                const year = viewMonth.getFullYear();
+                const month = viewMonth.getMonth();
                 const firstDay = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 const days = [];
@@ -206,8 +186,12 @@
 
             const Calendar = () => (
                 <div className="calendar-container">
-                    <div style={{textAlign:'center', fontWeight:'bold', marginBottom:'10px', fontSize: '18px'}}>
-                        {selectedDate.getFullYear()}年{selectedDate.getMonth() + 1}月
+                    <div className="calendar-header">
+                        <button className="calendar-nav-btn" onClick={() => changeMonth(-1)}>〈</button>
+                        <div className="calendar-title">
+                            {viewMonth.getFullYear()}年{viewMonth.getMonth() + 1}月
+                        </div>
+                        <button className="calendar-nav-btn" onClick={() => changeMonth(1)}>〉</button>
                     </div>
                     <div className="calendar-grid">
                         {['日','月','火','水','木','金','土'].map(d => <div key={d} className="day-label">{d}</div>)}
@@ -288,7 +272,6 @@
                         )}
                     </div>
 
-                    {/* 🆕 改良版：浮かぶ横長大きな戻るボタン */}
                     {(view === 'history' || view === 'detail') && (
                         <div className="bottom-action-area">
                             <div className="big-back-btn" onClick={() => setView(view === 'history' ? 'home' : prevView)}>
