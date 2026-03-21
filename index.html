@@ -21,7 +21,6 @@
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .calendar-title { font-weight: bold; font-size: 18px; }
         .calendar-nav-btn { background: #eee; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #555; }
-        .calendar-nav-btn:active { background: #ddd; }
         
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; }
@@ -30,27 +29,32 @@
         .is-today { border: 2px solid #007bff; }
         .is-selected { background-color: #4a4a4a; color: white; font-weight: bold; border: none; }
 
-        textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
-        button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; }
+        textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; }
         
         .btn-blue { background-color: #007bff; color: white; }
         .btn-green { background-color: #28a745; color: white; }
         .btn-outline { background-color: white; color: #333; border: 1px solid #ddd; }
-        .btn-level { background-color: #f0f7ff; color: #007bff; border: 2px solid #007bff; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; width: auto; margin: 0; }
+        .btn-level { background-color: #f0f7ff; color: #007bff; border: 2px solid #007bff; border-radius: 8px; padding: 8px 16px; font-size: 14px; width: auto; margin: 0; }
 
         .bottom-action-area { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; padding: 0 20px; z-index: 1000; pointer-events: none; }
-        .big-back-btn { background: #4a4a4a; color: white; width: 100%; max-width: 500px; padding: 16px; border-radius: 16px; text-align: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; }
-        .big-back-btn:active { opacity: 0.8; transform: scale(0.98); }
+        .big-back-btn { background: #4a4a4a; color: white; width: 100%; max-width: 500px; padding: 16px; border-radius: 16px; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; }
 
         .history-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
+        
         .highlight-inline { font-weight: bold; color: #0d47a1; background-color: #e3f2fd; padding: 2px 4px; border-radius: 4px; margin: 0 2px; }
-        .highlight-header { display: inline-block; font-weight: bold; color: #1565c0; font-size: 1.1em; margin-top: 15px; margin-bottom: 5px; border-bottom: 2px solid #e3f2fd; }
+        
+        /* 🆕 最初の見出しの余白を消去、2番目以降に余白を持たせる */
+        .highlight-header { display: inline-block; font-weight: bold; color: #1565c0; font-size: 1.1em; margin-bottom: 5px; border-bottom: 2px solid #e3f2fd; }
+        .highlight-header:not(:first-child) { margin-top: 20px; }
+        .highlight-header:first-child { margin-top: 0; }
+
         .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
         .badge-done { background: #e8f5e9; color: #2e7d32; }
         .badge-pending { background: #fff3e0; color: #e65100; }
         .toolbar { display: flex; gap: 10px; margin-bottom: 5px; }
-        .btn-tool { width: auto; padding: 6px 12px; font-size: 14px; margin: 0; background: #eee; color: #333; border-radius: 6px; }
+        .btn-tool { width: auto; padding: 6px 12px; font-size: 14px; background: #eee; color: #333; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -64,7 +68,7 @@
             const [prevView, setPrevView] = useState('home');
             const [history, setHistory] = useState([]);
             const [selectedDate, setSelectedDate] = useState(new Date());
-            const [viewMonth, setViewMonth] = useState(new Date()); // 🆕 表示中の月を管理
+            const [viewMonth, setViewMonth] = useState(new Date());
             const [text, setText] = useState('');
             const [level, setLevel] = useState('B1');
             const [activeEntry, setActiveEntry] = useState(null);
@@ -101,14 +105,14 @@
             const hasEntryOnDate = (date) => {
                 if (!date) return false;
                 const dateStr = date.toLocaleDateString('ja-JP');
-                return history.some(item => item.date.split(' ')[0] === dateStr);
+                return history.some(item => item.date === dateStr);
             };
 
             const handleDateClick = (date) => {
                 if (!date) return;
                 setSelectedDate(date);
                 const dateStr = date.toLocaleDateString('ja-JP');
-                const existing = history.find(item => item.date.split(' ')[0] === dateStr);
+                const existing = history.find(item => item.date === dateStr);
                 if (existing) {
                     setPrevView('home');
                     openDetail(existing);
@@ -124,7 +128,7 @@
                 navigator.clipboard.writeText(prompt);
                 const newEntry = {
                     id: Date.now(),
-                    date: selectedDate.toLocaleDateString('ja-JP') + " " + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}),
+                    date: selectedDate.toLocaleDateString('ja-JP'), // 🆕 日付のみ
                     original: text,
                     ai: '',
                     level: level
@@ -188,9 +192,7 @@
                 <div className="calendar-container">
                     <div className="calendar-header">
                         <button className="calendar-nav-btn" onClick={() => changeMonth(-1)}>〈</button>
-                        <div className="calendar-title">
-                            {viewMonth.getFullYear()}年{viewMonth.getMonth() + 1}月
-                        </div>
+                        <div className="calendar-title">{viewMonth.getFullYear()}年{viewMonth.getMonth() + 1}月</div>
                         <button className="calendar-nav-btn" onClick={() => changeMonth(1)}>〉</button>
                     </div>
                     <div className="calendar-grid">
@@ -220,7 +222,7 @@
                         {view === 'home' && (
                             <div>
                                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '15px'}}>
-                                    <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')} の日記</h3>
+                                    <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')}</h3>
                                     <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
                                 </div>
                                 <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
@@ -230,7 +232,7 @@
                                 <h4 style={{marginTop:'30px'}}>最近の記録</h4>
                                 {history.slice(0, 3).map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
-                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
+                                        <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
                                         <span className={`badge ${item.ai ? 'badge-done' : 'badge-pending'}`}>{item.ai ? '添削済' : '未添削'}</span>
                                     </div>
                                 ))}
