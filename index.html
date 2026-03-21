@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PolyglotDiary</title>
     
-    <!-- iOSフルスクリーン＆アイコン設定 -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -39,14 +38,20 @@
         .history-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .feedback-display { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 15px; margin-top: 10px; }
         
-        /* 強調文字（太字）のデザイン */
-        .highlight-bold { font-weight: bold; color: #d32f2f; background-color: #fff0f0; padding: 0 4px; border-radius: 4px; }
+        /* === 🎨 ここを赤から青に変更しました === */
+        .highlight-bold { 
+            font-weight: bold; 
+            color: #1976d2; /* 濃い青色に変更 */
+            background-color: #e3f2fd; /* 薄い青色の背景に変更 */
+            padding: 0 4px; 
+            border-radius: 4px; 
+        }
+        /* ======================================= */
 
         .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
         .badge-done { background: #e8f5e9; color: #2e7d32; }
         .badge-pending { background: #fff3e0; color: #e65100; }
         
-        /* 編集ツールバー */
         .toolbar { display: flex; gap: 10px; margin-bottom: 5px; }
         .btn-tool { width: auto; padding: 6px 12px; font-size: 14px; margin: 0; background: #eee; color: #333; border-radius: 6px; }
     </style>
@@ -144,7 +149,6 @@
                 setIsEditing(false);
             };
 
-            // 太字にするためのツールバー機能
             const applyBoldFormat = () => {
                 const textarea = textareaRef.current;
                 if (!textarea) return;
@@ -153,7 +157,6 @@
                 const end = textarea.selectionEnd;
                 const selectedText = feedbackInput.substring(start, end);
 
-                // 選択範囲がない場合はカーソルの位置に ** ** を挿入
                 if (start === end) {
                     const newText = feedbackInput.substring(0, start) + "****" + feedbackInput.substring(end);
                     setFeedbackInput(newText);
@@ -161,16 +164,13 @@
                     return;
                 }
 
-                // 選択された文字を ** ** で囲む
                 const newText = feedbackInput.substring(0, start) + `**${selectedText}**` + feedbackInput.substring(end);
                 setFeedbackInput(newText);
                 setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
             };
 
-            // **で囲まれた文字を太字(赤色)で描画する関数
             const renderFormattedText = (text) => {
                 if (!text) return "";
-                // **で囲まれた部分を分割して配列にする
                 const parts = text.split(/(\*\*.*?\*\*)/g);
                 return parts.map((part, index) => {
                     if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
@@ -267,7 +267,6 @@
                             ) : (
                                 <div>
                                     <div className="feedback-display">
-                                        {/* ここで太字への変換処理を通しています */}
                                         {renderFormattedText(activeEntry.ai)}
                                     </div>
                                     <button className="btn-outline" style={{marginTop:'10px'}} onClick={() => setIsEditing(true)}>編集する</button>
