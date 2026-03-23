@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PolyglotDiary</title>
+    <title>PolyglotDiary Sync</title>
     
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,25 +34,22 @@
         .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; border: 2px solid transparent; }
         .day-label { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
         
-        /* 記録がある日の背景（薄い青） */
         .has-entry { background-color: #e3f2fd; color: #1976d2; font-weight: bold; }
-        
-        /* ✅ 今日の日付を枠線（ブルー）のみに変更 */
         .is-today { border: 2px solid #85B6FE !important; }
-        
-        /* 選択されている日の背景（濃いグレー） */
         .is-selected { background-color: #333 !important; color: white !important; font-weight: bold; border: 2px solid #333 !important; }
         
         textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ccc; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; background: white; }
         
-        button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; }
+        button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; position: relative; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
         button:active { opacity: 0.8; }
 
         .btn-blue { background-color: #85B6FE; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .btn-green { background-color: #28a745; color: white; }
-        
         .btn-outline { background-color: rgba(255, 255, 255, 0.8); color: #333; border: 1px solid #999; }
         .btn-level { background-color: white; color: #85B6FE; border: 2px solid #85B6FE; border-radius: 8px; padding: 8px 16px; font-size: 14px; width: auto; margin: 0; }
+        
+        .sync-status { font-size: 12px; text-align: center; color: #fff; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 20px; padding: 4px 10px; display: inline-block; }
         
         .bottom-action-area { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; padding: 0 20px; z-index: 1000; pointer-events: none; }
         .big-back-btn { background: #333; color: white; width: 100%; max-width: 500px; padding: 16px; border-radius: 16px; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; pointer-events: auto; }
@@ -74,6 +71,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // ✅ あなたのGASのURL
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzDDpXDh-rHWqjv9sCmBIXQJj3QhU-NbWs2Wuo_9XoM7nKYgSGAMDQqeb8-RyXX58aDFQ/exec";
+
         function App() {
             const [view, setView] = useState('home');
             const [prevView, setPrevView] = useState('home');
@@ -85,6 +85,8 @@
             const [activeEntry, setActiveEntry] = useState(null);
             const [feedbackInput, setFeedbackInput] = useState('');
             const [isEditing, setIsEditing] = useState(false);
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [syncMsg, setSyncMsg] = useState('');
             
             const textareaRef = useRef(null);
 
@@ -92,6 +94,27 @@
                 const saved = localStorage.getItem('polyglot_diary_v3');
                 if (saved) setHistory(JSON.parse(saved));
             }, []);
+
+            // ✅ スプレッドシートへ送信する関数
+            const syncToSheet = async (data) => {
+                setIsSyncing(true);
+                setSyncMsg('スプレッドシートに保存中...');
+                try {
+                    await fetch(GAS_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // GAS用
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    setSyncMsg('クラウド保存完了 ✅');
+                    setTimeout(() => setSyncMsg(''), 3000);
+                } catch (e) {
+                    console.error(e);
+                    setSyncMsg('保存エラー ❌');
+                } finally {
+                    setIsSyncing(false);
+                }
+            };
 
             const toggleLevel = () => {
                 const levels = ['A2', 'B1', 'B2'];
@@ -133,10 +156,11 @@
                 }
             };
 
-            const handleWriteAndGo = () => {
+            const handleWriteAndGo = async () => {
                 if (!text) return alert("日記を書いてください");
                 const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
                 navigator.clipboard.writeText(prompt);
+                
                 const newEntry = {
                     id: Date.now(),
                     date: selectedDate.toLocaleDateString('ja-JP'),
@@ -144,9 +168,14 @@
                     ai: '',
                     level: level
                 };
+                
                 const newHistory = [newEntry, ...history];
                 setHistory(newHistory);
                 localStorage.setItem('polyglot_diary_v3', JSON.stringify(newHistory));
+                
+                // シートへ送信
+                await syncToSheet(newEntry);
+                
                 setText('');
                 window.location.href = "googlegemini://";
             };
@@ -158,12 +187,16 @@
                 setView('detail');
             };
 
-            const saveFeedback = () => {
-                const updated = history.map(item => item.id === activeEntry.id ? { ...item, ai: feedbackInput } : item);
+            const saveFeedback = async () => {
+                const updatedEntry = { ...activeEntry, ai: feedbackInput };
+                const updated = history.map(item => item.id === activeEntry.id ? updatedEntry : item);
                 setHistory(updated);
                 localStorage.setItem('polyglot_diary_v3', JSON.stringify(updated));
-                setActiveEntry({ ...activeEntry, ai: feedbackInput });
+                setActiveEntry(updatedEntry);
                 setIsEditing(false);
+                
+                // 編集した内容をシートにも再送して上書き
+                await syncToSheet(updatedEntry);
             };
 
             const applyBoldFormat = () => {
@@ -232,6 +265,8 @@
             return (
                 <div>
                     <div className="container">
+                        <div style={{textAlign:'center'}}>{syncMsg && <span className="sync-status">{syncMsg}</span>}</div>
+                        
                         {view === 'home' && <Calendar />}
 
                         {view === 'home' && (
@@ -241,7 +276,9 @@
                                     <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
                                 </div>
                                 <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
-                                <button className="btn-blue" onClick={handleWriteAndGo}>Geminiを開いて添削</button>
+                                <button className="btn-blue" onClick={handleWriteAndGo} disabled={isSyncing}>
+                                    {isSyncing ? 'Guardando...' : 'Geminiを開いて添削'}
+                                </button>
                                 <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
                                 
                                 <h4 style={{marginTop:'30px'}}>最近の記録（直近5つ）</h4>
@@ -277,7 +314,9 @@
                                     <div>
                                         <div className="toolbar"><button className="btn-tool" onClick={applyBoldFormat}><strong>B</strong> 太字</button></div>
                                         <textarea ref={textareaRef} value={feedbackInput} onChange={(e) => setFeedbackInput(e.target.value)} style={{ height: '300px' }} />
-                                        <button className="btn-green" onClick={saveFeedback}>保存する</button>
+                                        <button className="btn-green" onClick={saveFeedback} disabled={isSyncing}>
+                                            {isSyncing ? 'Guardando...' : '保存してクラウドに同期'}
+                                        </button>
                                     </div>
                                 ) : (
                                     <div>
