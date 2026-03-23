@@ -47,6 +47,7 @@
         .btn-blue { background-color: #85B6FE; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .btn-green { background-color: #28a745; color: white; }
         .btn-outline { background-color: rgba(255, 255, 255, 0.8); color: #333; border: 1px solid #999; }
+        .btn-danger { background-color: transparent; color: #dc3545; border: 1px solid #dc3545; margin-top: 40px; font-size: 14px; padding: 10px; }
         .btn-level { background-color: white; color: #85B6FE; border: 2px solid #85B6FE; border-radius: 8px; padding: 8px 16px; font-size: 14px; width: auto; margin: 0; }
         
         .sync-status { font-size: 12px; text-align: center; color: #fff; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 20px; padding: 4px 10px; display: inline-block; }
@@ -71,7 +72,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // ✅ あなたのGASのURL
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzDDpXDh-rHWqjv9sCmBIXQJj3QhU-NbWs2Wuo_9XoM7nKYgSGAMDQqeb8-RyXX58aDFQ/exec";
 
         function App() {
@@ -95,14 +95,13 @@
                 if (saved) setHistory(JSON.parse(saved));
             }, []);
 
-            // ✅ スプレッドシートへ送信する関数
             const syncToSheet = async (data) => {
                 setIsSyncing(true);
                 setSyncMsg('スプレッドシートに保存中...');
                 try {
                     await fetch(GAS_URL, {
                         method: 'POST',
-                        mode: 'no-cors', // GAS用
+                        mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
@@ -173,9 +172,7 @@
                 setHistory(newHistory);
                 localStorage.setItem('polyglot_diary_v3', JSON.stringify(newHistory));
                 
-                // シートへ送信
                 await syncToSheet(newEntry);
-                
                 setText('');
                 window.location.href = "googlegemini://";
             };
@@ -194,9 +191,18 @@
                 localStorage.setItem('polyglot_diary_v3', JSON.stringify(updated));
                 setActiveEntry(updatedEntry);
                 setIsEditing(false);
-                
-                // 編集した内容をシートにも再送して上書き
                 await syncToSheet(updatedEntry);
+            };
+
+            // ✅ 日記を削除する関数（スプレッドシートからは消えません）
+            const deleteEntry = () => {
+                if (!window.confirm("この日記を削除しますか？\n(アプリ内からのみ削除され、スプレッドシートのバックアップは残ります)")) return;
+                
+                const updated = history.filter(item => item.id !== activeEntry.id);
+                setHistory(updated);
+                localStorage.setItem('polyglot_diary_v3', JSON.stringify(updated));
+                
+                setView(prevView); // 前の画面に戻る
             };
 
             const applyBoldFormat = () => {
@@ -281,7 +287,7 @@
                                 </button>
                                 <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
                                 
-                                <h4 style={{marginTop:'30px'}}>最近の記録（直近5つ）</h4>
+                                <h4 style={{marginTop:'30px'}}>最近の記録</h4>
                                 {getSortedHistory().slice(0, 5).map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
                                         <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
@@ -324,6 +330,8 @@
                                         <button className="btn-outline" style={{marginTop:'10px'}} onClick={() => setIsEditing(true)}>編集する</button>
                                     </div>
                                 )}
+                                
+                                <button className="btn-danger" onClick={deleteEntry}>この日記を削除</button>
                             </div>
                         )}
                     </div>
