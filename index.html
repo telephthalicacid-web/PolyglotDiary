@@ -280,7 +280,7 @@
                         {view === 'home' && (
                             <div>
                                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '15px'}}>
-                                    <h3 style={{margin: 0}}>{selectedDate.toLocaleDateString('ja-JP')}</h3>
+                                    <h3 style={{margin: 0, color: '#FFFFFF'}}>{selectedDate.toLocaleDateString('ja-JP')}</h3>
                                     <button className="btn-level" onClick={toggleLevel}>Nivel: {level}</button>
                                 </div>
                                 <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe aquí..." />
@@ -289,7 +289,7 @@
                                 </button>
                                 <button className="btn-outline" onClick={() => { setPrevView('home'); setView('history'); }}>履歴をすべて見る ➔</button>
                                 
-                                <h4 style={{marginTop:'30px'}}>最近の記録</h4>
+                                <h4 style={{marginTop:'30px', color: '#FFFFFF'}}>最近の記録</h4>
                                 {getSortedHistory().slice(0, 5).map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('home'); openDetail(item); }}>
                                         <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
@@ -301,7 +301,7 @@
 
                         {view === 'history' && (
                             <div>
-                                <h3 style={{marginTop: '10px', marginBottom: '20px'}}>Historial</h3>
+                                <h3 style={{marginTop: '10px', marginBottom: '20px', color: '#FFFFFF'}}>Historial</h3>
                                 {getSortedHistory().map(item => (
                                     <div key={item.id} className="history-card" onClick={() => { setPrevView('history'); openDetail(item); }}>
                                         <div style={{minWidth:0, flex:1}}><div style={{fontWeight:'bold'}}>{item.date.split(' ')[0]}</div><div style={{fontSize:'12px', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.original}</div></div>
