@@ -34,10 +34,38 @@
         .calendar-day { padding: 8px 0; font-size: 14px; border-radius: 8px; cursor: pointer; position: relative; box-sizing: border-box; border: 2px solid transparent; }
         .day-label { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
         
-        .has-entry { background-color: #e3f2fd; color: #1976d2; font-weight: bold; }
-        .is-today { border: 2px solid #85B6FE !important; }
-        .is-selected { background-color: #333 !important; color: white !important; font-weight: bold; border: 2px solid #333 !important; }
-        
+        /* 日記登録済み：背景は透明にし、数字の上に濃いめの青いドットを配置 */
+.has-entry { 
+    background-color: transparent !important; 
+    color: #FFFFFF !important; 
+    position: relative; /* ドットの基準点 */
+}
+
+.has-entry::before {
+    content: '';
+    position: absolute;
+    top: 4px; /* 数字の上に配置 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background-color: #1976d2; /* 濃いめの青ドット */
+    border-radius: 50%;
+}
+
+/* 今日：青い枠線（背景は透明） */
+.is-today { 
+    border: 2px solid #85B6FE !important; 
+    background-color: transparent !important;
+}
+
+/* 選択中：薄い青の塗りつぶし（枠なし） */
+.is-selected { 
+    background-color: rgba(133, 182, 254, 0.3) !important; 
+    border: none !important; 
+    color: #FFFFFF !important;
+}
+
         textarea { width: 100%; height: 180px; margin-bottom: 10px; padding: 15px; border: 1px solid #ccc; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; background: white; }
         
         button { padding: 14px 20px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; width: 100%; display: block; margin-bottom: 10px; transition: opacity 0.2s; position: relative; }
