@@ -184,8 +184,12 @@
 
             const handleWriteAndGo = async () => {
                 if (!text) return alert("日記を書いてください");
-                const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。\n---\n${text}`;
-                navigator.clipboard.writeText(prompt);
+                const prompt = `以下のスペイン語の日記を添削して。目標レベルは${level}です。
+また、学んだほうが良い重要な語彙や表現を「vocabulario y expresiones」という見出しの下に、
+「- 単語 : 意味」という形式のリストで必ず5つ前後ピックアップして。
+---
+${text}`;
+    navigator.clipboard.writeText(prompt);
                 
                 const newEntry = {
                     id: Date.now(),
